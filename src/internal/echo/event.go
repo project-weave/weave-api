@@ -3,54 +3,66 @@ package echo
 import (
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/project-weave/weave-api/src/internal/domain"
 )
 
 func (s *Server) RegisterEventRoutes() {
-	s.server.POST("/event", s.AddEvent)
-	s.server.GET("/event/:id", s.GetEvent)
-
-	s.server.GET("/event/:id/availability", s.GetEventAvailability)
-	s.server.POST("/event/:id/availability", s.UpdateEventAvailability)
+	s.server.POST("/v1/event", s.AddEvent)
+	s.server.GET("/v1/event/:event_id", s.GetEvent)
+	s.server.POST("/v1/event/:event_id/availability", s.UpsertUserEventAvailability)
 }
 
 func (s *Server) AddEvent(ctx echo.Context) error {
-	var event *domain.Event
-	if err := ctx.Bind(event); err != nil {
+	var event domain.Event
+	if err := ctx.Bind(&event); err != nil {
 		return s.badRequestResponse(ctx, err)
 	}
 
-	validationErrors := domain.ValidateEvent(event)
-	if len(validationErrors) != 0 {
+	if err := s.validate.Struct(event); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
 		return s.validationErrorResponse(ctx, validationErrors)
 	}
-
-	if err := s.EventService.AddEvent(event); err != nil {
+	id, err := s.EventService.AddEvent(ctx.Request().Context(), &event)
+	if err != nil {
 		return s.serverErrorResponse(ctx, err)
 	}
-	return ctx.JSON(http.StatusOK, event)
+
+	return ctx.JSON(http.StatusOK, envelope{"event_id": id})
 }
 
 func (s *Server) GetEvent(ctx echo.Context) error {
-	idString := ctx.Param("id")
-	eventUUID, err := uuid.Parse(idString)
+	idParam := ctx.Param("event_id")
+	eventID, err := uuid.Parse(idParam)
 	if err != nil {
 		return s.notFoundResponse(ctx, err)
 	}
 
-	event, err := s.EventService.GetEvent(eventUUID)
+	event, responses, err := s.EventService.GetEvent(ctx.Request().Context(), eventID)
 	if err != nil {
 		return s.notFoundResponse(ctx, err)
 	}
-	return ctx.JSON(http.StatusOK, event)
+
+	return ctx.JSON(http.StatusOK, envelope{"event": event, "responses": responses})
 }
 
-func (s *Server) GetEventAvailability(ctx echo.Context) error {
-	return nil
-}
+func (s *Server) UpsertUserEventAvailability(ctx echo.Context) error {
+	eventResponse := domain.EventResponse{}
+	if err := ctx.Bind(&eventResponse); err != nil {
+		return s.badRequestResponse(ctx, err)
+	}
 
-func (s *Server) UpdateEventAvailability(ctx echo.Context) error {
-	return nil
+	if err := s.validate.Struct(eventResponse); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		return s.validationErrorResponse(ctx, validationErrors)
+	}
+
+	err := s.EventService.UpsertUserEventAvailability(ctx.Request().Context(), eventResponse)
+	if err != nil {
+		return s.serverErrorResponse(ctx, err)
+	}
+
+	return ctx.JSON(http.StatusOK, envelope{"success": true})
 }

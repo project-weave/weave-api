@@ -27,16 +27,23 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	viper.SetConfigFile("../.env")
+	viper.SetConfigFile(".env")
 	err := viper.ReadInConfig()
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	dsn := viper.GetString("POSTGRES_DSN")
+
 	db := postgres.NewDB(dsn)
-	server := echo.NewServer()
-	server.EventService = postgres.NewEventService(db)
+	err = db.Open()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	eventService := postgres.NewEventService(db)
+
+	server := echo.NewServer(logger, eventService)
 
 	go func() {
 		if err := server.Start(fmt.Sprintf(":%d", cfg.port)); err != nil && !errors.Is(err, http.ErrServerClosed) {
