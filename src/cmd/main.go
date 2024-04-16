@@ -18,8 +18,6 @@ type config struct {
 	port int
 }
 
-const version = "1"
-
 func main() {
 	var cfg config
 	flag.IntVar(&cfg.port, "port", 8080, "server port")

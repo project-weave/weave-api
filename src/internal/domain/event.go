@@ -20,8 +20,8 @@ type EventService interface {
 type Event struct {
 	ID              uuid.UUID   `json:"id"`
 	Name            string      `json:"name" validate:"required,min=1"`
-	StartTime       EventTime   `json:"start_time" validate:"required"`
-	EndTime         EventTime   `json:"end_time" validate:"required"`
+	StartTime       EventTime   `json:"start_time"`
+	EndTime         EventTime   `json:"end_time"`
 	IsSpecificDates bool        `json:"is_specific_dates" validate:"required"`
 	EventDates      []EventDate `json:"event_dates" validate:"required,min=1"`
 	// TimeZone        string    `json:"time_zone" validate:"required"`
@@ -42,6 +42,13 @@ func RegisterEventServiceValidators(validate *validator.Validate) {
 }
 
 func ValidateStartAndEndTime(startTime EventTime, endTime EventTime, sl validator.StructLevel) {
+	if startTime.IsZero() {
+		sl.ReportError(startTime, "start_time", "StartTime", "required", "")
+	}
+	if endTime.IsZero() {
+		sl.ReportError(endTime, "end_time", "EndTime", "required", "")
+	}
+
 	if startTime.After(endTime.Time) {
 		sl.ReportError(endTime, "end_time", "EndTime", "end_time_after_start_time", "")
 	}
