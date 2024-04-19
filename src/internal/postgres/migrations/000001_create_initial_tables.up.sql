@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS events (
     id UUID DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
-    event_dates DATE[] NOT NULL,
+    dates DATE[] NOT NULL,
     is_specific_dates BOOLEAN NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,

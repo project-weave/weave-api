@@ -22,8 +22,8 @@ type Event struct {
 	Name            string      `json:"name" validate:"required,min=1"`
 	StartTime       EventTime   `json:"start_time"`
 	EndTime         EventTime   `json:"end_time"`
-	IsSpecificDates bool        `json:"is_specific_dates" validate:"required"`
-	EventDates      []EventDate `json:"event_dates" validate:"required,min=1"`
+	IsSpecificDates bool        `json:"is_specific_dates"`
+	Dates           []EventDate `json:"dates" validate:"required,min=1"`
 	// TimeZone        string    `json:"time_zone" validate:"required"`
 }
 

@@ -22,8 +22,8 @@ func NewEventService(db *DB) *EventService {
 
 func (e *EventService) AddEvent(ctx context.Context, event *domain.Event) (uuid.UUID, error) {
 	sql, args, err := sq.Insert("events").
-		Columns("name", "is_specific_dates", "start_time", "end_time", "event_dates").
-		Values(event.Name, event.IsSpecificDates, event.StartTime, event.EndTime.Time, event.EventDates).
+		Columns("name", "is_specific_dates", "start_time", "end_time", "dates").
+		Values(event.Name, event.IsSpecificDates, event.StartTime, event.EndTime.Time, event.Dates).
 		Suffix("RETURNING \"id\"").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
@@ -48,7 +48,7 @@ func (e *EventService) GetEvent(ctx context.Context, eventID uuid.UUID) (*domain
 	}
 	defer tx.Rollback(ctx)
 
-	sql, args, err := sq.Select("id", "name", "is_specific_dates", "start_time", "end_time", "event_dates").
+	sql, args, err := sq.Select("id", "name", "is_specific_dates", "start_time", "end_time", "dates").
 		From("events").
 		Where(sq.Eq{"id": eventID}).
 		PlaceholderFormat(sq.Dollar).
@@ -59,7 +59,7 @@ func (e *EventService) GetEvent(ctx context.Context, eventID uuid.UUID) (*domain
 
 	row := tx.QueryRow(ctx, sql, args...)
 	event := domain.Event{}
-	err = row.Scan(&event.ID, &event.Name, &event.IsSpecificDates, &event.StartTime, &event.EndTime, &event.EventDates)
+	err = row.Scan(&event.ID, &event.Name, &event.IsSpecificDates, &event.StartTime, &event.EndTime, &event.Dates)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,6 +115,10 @@ func convertTimeRangesToTimeSlots(ranges [][]domain.EventDateTime) ([]domain.Eve
 }
 
 func convertTimeSlotsToRanges(timeSlots []domain.EventDateTime) ([][]domain.EventDateTime, error) {
+	if len(timeSlots) == 0 {
+		return [][]domain.EventDateTime{}, nil
+	}
+
 	sort.Slice(timeSlots, func(i, j int) bool {
 		return timeSlots[i].Before(timeSlots[j].Time)
 	})

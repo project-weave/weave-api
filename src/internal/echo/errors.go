@@ -10,6 +10,7 @@ import (
 
 func (s *Server) errorResponse(ctx echo.Context, status int, message any) error {
 	env := envelope{"error": message}
+
 	return ctx.JSON(status, env)
 }
 
@@ -28,6 +29,8 @@ func (s *Server) notFoundResponse(ctx echo.Context, err error) error {
 }
 
 func (s *Server) badRequestResponse(ctx echo.Context, err error) error {
+	s.logger.Print(err.Error())
+
 	return s.errorResponse(ctx, http.StatusBadRequest, err.Error())
 }
 
@@ -64,6 +67,8 @@ func (s *Server) validationErrorResponse(ctx echo.Context, errors validator.Vali
 		}
 		output[i] = e
 	}
+
+	s.logger.Printf(`validation error: ${%v}`, output)
 
 	return s.errorResponse(ctx, http.StatusBadRequest, output)
 }
