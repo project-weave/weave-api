@@ -10,17 +10,17 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/project-weave/weave-api/src/internal/domain"
+	"github.com/project-weave/weave-api/src/internal/types/event"
 )
 
 type Server struct {
 	logger       *log.Logger
 	server       *echo.Echo
 	validate     *validator.Validate
-	EventService domain.EventService
+	EventService event.EventService
 }
 
-func NewServer(logger *log.Logger, eventService domain.EventService) *Server {
+func NewServer(logger *log.Logger, es event.EventService) *Server {
 	e := echo.New()
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status}\n",
@@ -38,17 +38,17 @@ func NewServer(logger *log.Logger, eventService domain.EventService) *Server {
 		return name
 	})
 
-	// register domain validators
-	domain.RegisterEventServiceValidators(validator)
+	// register event validators
+	event.RegisterEventServiceValidators(validator)
 
 	s := &Server{
 		server:       e,
 		logger:       logger,
 		validate:     validator,
-		EventService: eventService,
+		EventService: es,
 	}
 
-	// register domain routes
+	// register event routes
 	s.RegisterEventRoutes()
 
 	return s

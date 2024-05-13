@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/project-weave/weave-api/src/internal/domain"
+	"github.com/project-weave/weave-api/src/internal/types/event"
 )
 
 func (s *Server) RegisterEventRoutes() {
@@ -16,7 +15,7 @@ func (s *Server) RegisterEventRoutes() {
 }
 
 func (s *Server) AddEvent(ctx echo.Context) error {
-	var event domain.Event
+	var event event.Event
 	if err := ctx.Bind(&event); err != nil {
 		return s.badRequestResponse(ctx, err)
 	}
@@ -35,7 +34,8 @@ func (s *Server) AddEvent(ctx echo.Context) error {
 
 func (s *Server) GetEvent(ctx echo.Context) error {
 	idParam := ctx.Param("event_id")
-	eventID, err := uuid.Parse(idParam)
+
+	eventID, err := event.ToEventUUID(idParam)
 	if err != nil {
 		return s.notFoundResponse(ctx, err)
 	}
@@ -49,7 +49,7 @@ func (s *Server) GetEvent(ctx echo.Context) error {
 }
 
 func (s *Server) UpsertUserEventAvailability(ctx echo.Context) error {
-	eventResponse := domain.EventResponse{}
+	eventResponse := event.EventResponse{}
 	if err := ctx.Bind(&eventResponse); err != nil {
 		return s.badRequestResponse(ctx, err)
 	}

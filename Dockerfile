@@ -13,4 +13,6 @@ FROM debian:bookworm
 COPY --from=builder /usr/src/app/main /usr/local/bin/
 COPY --from=builder /usr/src/app/src/migrations /usr/src/app/migrations
 
+ENV ENV=PROD
+
 CMD ["main"]

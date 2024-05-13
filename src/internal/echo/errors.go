@@ -8,8 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) errorResponse(ctx echo.Context, status int, message any) error {
-	env := envelope{"error": message}
+func (s *Server) errorResponse(ctx echo.Context, status int, msg any) error {
+	env := envelope{"error": msg}
 
 	return ctx.JSON(status, env)
 }
@@ -48,10 +48,10 @@ type validationError struct {
 	Message         string `json:"message"`
 }
 
-func (s *Server) validationErrorResponse(ctx echo.Context, errors validator.ValidationErrors) error {
-	output := make([]validationError, len(errors))
+func (s *Server) validationErrorResponse(ctx echo.Context, errs validator.ValidationErrors) error {
+	output := make([]validationError, len(errs))
 
-	for i, err := range errors {
+	for i, err := range errs {
 		e := validationError{
 			Namespace:       err.Namespace(),
 			Field:           err.Field(),

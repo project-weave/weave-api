@@ -14,6 +14,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/project-weave/weave-api/src/internal/echo"
 	"github.com/project-weave/weave-api/src/internal/postgres"
+	"github.com/spf13/viper"
 )
 
 type config struct {
@@ -27,36 +28,42 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	// viper.SetConfigFile(".env")
-	// err := viper.ReadInConfig()
-	// if err != nil {
-	// 	logger.Fatal(err)
-	// }
+	var dsn string
+	env := os.Getenv("ENV")
 
-	// dsn := viper.GetString("POSTGRES_DSN")
-
-	dsn := os.Getenv("DATABASE_URL")
-	fmt.Println(dsn)
-
-	m, err := migrate.New(
-		"file:///usr/src/app/migrations",
-		dsn)
-	if err != nil {
-		fmt.Println("hello")
-		logger.Fatal(err)
-	}
-
-	logger.Println("Applying migration")
-
-	if err := m.Up(); err != nil {
-		if !errors.Is(err, migrate.ErrNoChange) {
-			logger.Println("No changes were applied to database")
+	switch env {
+	case "DEV":
+		logger.Println("Environment: DEV")
+		viper.SetConfigFile(".env")
+		err := viper.ReadInConfig()
+		if err != nil {
 			logger.Fatal(err)
 		}
+		dsn = viper.GetString("POSTGRES_DSN")
+	case "PROD":
+		logger.Println("Environment: PROD")
+		dsn = os.Getenv("DATABASE_URL")
+		m, err := migrate.New(
+			"file:///usr/src/app/migrations",
+			dsn)
+		if err != nil {
+			logger.Fatal(err)
+		}
+
+		logger.Println("Applying migration")
+
+		if err := m.Up(); err != nil {
+			if !errors.Is(err, migrate.ErrNoChange) {
+				logger.Println("No changes were applied to database")
+				logger.Fatal(err)
+			}
+		}
+	default:
+		logger.Fatal(errors.New("unknown environment"))
 	}
 
 	db := postgres.NewDB(dsn)
-	err = db.Open()
+	err := db.Open()
 	if err != nil {
 		logger.Fatal(err)
 	}
