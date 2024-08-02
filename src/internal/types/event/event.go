@@ -1,6 +1,8 @@
 package event
 
 import (
+	"time"
+
 	"github.com/go-playground/validator/v10"
 )
 
@@ -21,6 +23,10 @@ func RegisterEventServiceValidators(validate *validator.Validate) {
 	}, Event{})
 }
 
+func isEndTimeMidnight(time time.Time) bool {
+	return time.Hour() == 0 && time.Minute() == 0 && time.Second() == 0
+}
+
 func ValidateStartAndEndTime(startTime EventTime, endTime EventTime, sl validator.StructLevel) {
 	if startTime.IsZero() {
 		sl.ReportError(startTime, "start_time", "StartTime", "required", "")
@@ -29,7 +35,8 @@ func ValidateStartAndEndTime(startTime EventTime, endTime EventTime, sl validato
 		sl.ReportError(endTime, "end_time", "EndTime", "required", "")
 	}
 
-	if startTime.After(endTime.Time) {
+	// if end time is midnight then assume it is the next day
+	if !isEndTimeMidnight(endTime.Time) && !startTime.Before(endTime.Time) {
 		sl.ReportError(endTime, "end_time", "EndTime", "end_time_after_start_time", "")
 	}
 }
