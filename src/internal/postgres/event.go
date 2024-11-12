@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"log"
 	"sort"
 	"time"
 
@@ -45,7 +46,12 @@ func (es *EventService) GetEvent(ctx context.Context, eID event.EventUUID) (*eve
 	if err != nil {
 		return nil, nil, err
 	}
-	defer tx.Rollback(ctx)
+
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			log.Fatalf("tx.Rollback failed: %v", err)
+		}
+	}()
 
 	sql, args, err := sq.Select("id", "name", "is_specific_dates", "start_time", "end_time", "dates").
 		From("events").
