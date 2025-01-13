@@ -22,8 +22,8 @@ func NewEventService(db *DB) *EventService {
 
 func (es *EventService) AddEvent(ctx context.Context, e *event.Event) (event.EventUUID, error) {
 	sql, args, err := sq.Insert("events").
-		Columns("name", "is_specific_dates", "start_time", "end_time", "dates").
-		Values(e.Name, e.IsSpecificDates, e.StartTime, e.EndTime.Time, e.Dates).
+		Columns("name", "is_specific_dates", "start_time", "end_time", "dates", "time_zone").
+		Values(e.Name, e.IsSpecificDates, e.StartTime, e.EndTime.Time, e.Dates, e.TimeZone).
 		Suffix("RETURNING \"id\"").
 		PlaceholderFormat(sq.Dollar).
 		ToSql()
@@ -53,7 +53,7 @@ func (es *EventService) GetEvent(ctx context.Context, eID event.EventUUID) (*eve
 		}
 	}()
 
-	sql, args, err := sq.Select("id", "name", "is_specific_dates", "start_time", "end_time", "dates").
+	sql, args, err := sq.Select("id", "name", "is_specific_dates", "start_time", "end_time", "dates", "time_zone").
 		From("events").
 		Where(sq.Eq{"id": eID}).
 		PlaceholderFormat(sq.Dollar).
@@ -64,7 +64,7 @@ func (es *EventService) GetEvent(ctx context.Context, eID event.EventUUID) (*eve
 
 	row := tx.QueryRow(ctx, sql, args...)
 	e := event.Event{}
-	err = row.Scan(&e.ID, &e.Name, &e.IsSpecificDates, &e.StartTime, &e.EndTime, &e.Dates)
+	err = row.Scan(&e.ID, &e.Name, &e.IsSpecificDates, &e.StartTime, &e.EndTime, &e.Dates, &e.TimeZone)
 	if err != nil {
 		return nil, nil, err
 	}

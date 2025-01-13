@@ -13,13 +13,14 @@ type Event struct {
 	EndTime         EventTime   `json:"end_time"`
 	IsSpecificDates bool        `json:"is_specific_dates"`
 	Dates           []EventDate `json:"dates" validate:"required,min=1"`
-	// TimeZone        string    `json:"time_zone" validate:"required"`
+	TimeZone        string      `json:"time_zone"`
 }
 
 func RegisterEventServiceValidators(validate *validator.Validate) {
 	validate.RegisterStructValidation(func(sl validator.StructLevel) {
 		event := sl.Current().Interface().(Event)
 		ValidateStartAndEndTime(event.StartTime, event.EndTime, sl)
+		ValidateTimeZone(event.TimeZone, sl)
 	}, Event{})
 }
 
@@ -38,5 +39,12 @@ func ValidateStartAndEndTime(startTime EventTime, endTime EventTime, sl validato
 	// if end time is midnight then assume it is the next day
 	if !isEndTimeMidnight(endTime.Time) && !startTime.Before(endTime.Time) {
 		sl.ReportError(endTime, "end_time", "EndTime", "end_time_after_start_time", "")
+	}
+}
+
+func ValidateTimeZone(timeZone string, sl validator.StructLevel) {
+	_, err := time.LoadLocation(timeZone)
+	if err != nil {
+		sl.ReportError(timeZone, "timezone", "TimeZone", "time_zone_invalid", "")
 	}
 }

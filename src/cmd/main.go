@@ -55,7 +55,6 @@ func main() {
 		if err := m.Up(); err != nil {
 			if !errors.Is(err, migrate.ErrNoChange) {
 				logger.Println("No changes were applied to database")
-				logger.Fatal(err)
 			}
 		}
 	default:
